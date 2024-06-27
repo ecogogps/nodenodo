@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini E-Commerce App</title>
+  <style>
+    /* Estilos CSS */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+    form, .categories, .products, .cart, .orders, .wallet {
+      margin-bottom: 20px;
+    }
+    input[type="text"], input[type="password"], input[type="email"], input[type="number"], button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+    }
+    .category, .product, .cart-item, .order-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .category img, .product img, .cart-item img, .order-item img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    .hidden {
+      display: none;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background-color: #007bff;
+      color: #fff;
+    }
+    .navbar button {
+      background-color: #fff;
+      color: #007bff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+    .navbar .nav-buttons {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="navbar">
+      <h1>Mini E-Commerce App</h1>
+      <div class="nav-buttons">
+        <button onclick="showMain()">Inicio</button>
+        <button onclick="showCart()">Carrito</button>
+        <button onclick="showOrders()">Mis Pedidos</button>
+        <button onclick="showWallet()">Billetera</button>
+      </div>
+    </div>
+
+    <!-- Pantalla Principal -->
+    <div id="main">
+      <!-- Formulario de Registro -->
+      <form id="registerForm">
+        <h2>Registro</h2>
+        <input type="email" id="registerEmail" placeholder="Correo electrónico" required>
+        <input type="password" id="registerPassword" placeholder="Clave" required>
+        <button type="submit">Registrar</button>
+      </form>
+
+      <!-- Formulario de Login -->
+      <form id="loginForm">
+        <h2>Login</h2>
+        <input type="email" id="loginEmail" placeholder="Correo electrónico" required>
+        <input type="password" id="loginPassword" placeholder="Clave" required>
+        <button type="submit">Iniciar Sesión</button>
+      </form>
+
+      <!-- Formulario de Recuperación de Clave -->
+      <form id="recoverForm">
+        <h2>Recuperación de Clave</h2>
+        <input type="email" id="recoverEmail" placeholder="Correo electrónico" required>
+        <button type="submit">Recuperar Clave</button>
+      </form>
+    </div>
+
+    <!-- Pantalla de Inicio -->
+    <div id="home" class="hidden">
+      <h2>Categorías</h2>
+      <div class="categories">
+        <div class="category" onclick="showProducts('Supermercado')">
+          <img src="supermarket.jpg" alt="Supermercado">
+          <span>Supermercado</span>
+        </div>
+        <div class="category" onclick="showProducts('Tecnología')">
+          <img src="technology.jpg" alt="Tecnología">
+          <span>Tecnología</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pantalla de Productos -->
+    <div id="products" class="hidden">
+      <h2 id="categoryTitle"></h2>
+      <div class="products"></div>
+      <button onclick="showHome()">Volver</button>
+    </div>
+
+    <!-- Pantalla del Carrito de Compras -->
+    <div id="cart" class="hidden">
+      <h2>Carrito de Compras</h2>
+      <div class="cart-items"></div>
+      <button onclick="showHome()">Seguir Comprando</button>
+      <button onclick="checkout()">Checkout</button>
+    </div>
+
+    <!-- Pantalla de Mis Pedidos -->
+    <div id="orders" class="hidden">
+      <h2>Mis Pedidos</h2>
+      <div class="order-items"></div>
+      <button onclick="showHome()">Volver</button>
+    </div>
+
+    <!-- Pantalla de Billetera -->
+    <div id="wallet" class="hidden">
+      <h2>Billetera Virtual</h2>
+      <div class="wallet-balance">
+        <span>Balance: $<span id="walletBalance">0.00</span></span>
+      </div>
+      <form id="addFundsForm">
+        <input type="number" id="addAmount" placeholder="Cantidad" required>
+        <button type="submit">Añadir Fondos</button>
+      </form>
+      <button onclick="showHome()">Volver</button>
+    </div>
+  </div>
+
+  <script>
+    let userId = '1'; // Simulación de usuario logueado
+    let currentCategory = '';
+
+    // Función para registrar usuario
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await res.json();
+      alert(data.message);
+    });
+
+    // Función para iniciar sesión
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await res.json();
+      if (data.message === 'Login successful') {
+        showHome();
+      } else {
+        alert(data.message);
+      }
+    });
+
+    // Función para recuperar clave
+    document.getElementById('recoverForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('recoverEmail').value;
+      
+      const res = await fetch('/api/auth/recover', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+      
+      const data = await res.json();
+      alert(data.message);
+    });
+
+    // Función para mostrar la pantalla de inicio
+    function showHome() {
+      document.getElementById('main').classList.add('hidden');
+      document.getElementById('home').classList.remove('hidden');
+      document.getElementById('products').classList.add('hidden');
+      document.getElementById('cart').classList.add('hidden');
+      document.getElementById('orders').classList.add('hidden');
+      document.getElementById('wallet').classList.add('hidden');
+    }
+
+    // Función para mostrar la pantalla principal
+    function showMain() {
+      document.getElementById('main').classList.remove('hidden');
+      document.getElementById('home').classList.add('hidden');
+      document.getElementById('products').classList.add('hidden');
+      document.getElementById('cart').classList.add('hidden');
+      document.getElementById('orders').classList.add('hidden');
+      document.getElementById('wallet').classList.add('hidden');
+    }
+
+    // Función para mostrar los productos de una categoría
+    function showProducts(category) {
+      currentCategory = category;
+      document.getElementById('categoryTitle').textContent = category;
+      const productsDiv = document.querySelector('.products');
+      productsDiv.innerHTML = '';
+      const products = category === 'Supermercado' ? 
+        [{ name: 'Tomate', img: 'tomato.jpg', price: 1.00 }] : 
+        [{ name: 'TV', img: 'tv.jpg', price: 1000.00 }];
+
+      products.forEach(product => {
+        const productDiv = document.createElement('div');
+        productDiv.classList.add('product');
+        productDiv.innerHTML = `
+          <img src="${product.img}" alt="${product.name}">
+          <span>${product.name} - $${product.price.toFixed(2)}</span>
+          <button onclick="addToCart(${product.id}, '${product.name}', ${product.price})">Agregar al Carrito</button>
+        `;
+        productsDiv.appendChild(productDiv);
+      });
+
+      document.getElementById('main').classList.add('hidden');
+      document.getElementById('home').classList.add('hidden');
+      document.getElementById('products').classList.remove('hidden');
+    }
+
+    // Función para añadir producto al carrito
+    async function addToCart(productId, productName, productPrice) {
+      const res = await fetch(`/api/cart/${userId}/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ productId, productName, productPrice, quantity: 1 })
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      fetchCart();
+    }
+
+    // Obtener y mostrar el carrito
+    async function fetchCart() {
+      const res = await fetch(`/api/cart/${userId}`);
+      const cart = await res.json();
+      const cartItemsDiv = document.querySelector('.cart-items');
+      cartItemsDiv.innerHTML = '';
+      cart.forEach(item => {
+        const cartItemDiv = document.createElement('div');
+        cartItemDiv.classList.add('cart-item');
+        cartItemDiv.innerHTML = `
+          <img src="${item.productName === 'Tomate' ? 'tomato.jpg' : 'tv.jpg'}" alt="${item.productName}">
+          <span>${item.productName} - $${item.productPrice.toFixed(2)}</span>
+          <input type="number" value="${item.quantity}" min="1" onchange="updateCart(${item.productId}, '${item.productName}', ${item.productPrice}, this.value)">
+          <button onclick="removeFromCart(${item.productId})">Eliminar</button>
+        `;
+        cartItemsDiv.appendChild(cartItemDiv);
+      });
+    }
+
+    // Actualizar cantidad en el carrito
+    async function updateCart(productId, productName, productPrice, quantity) {
+      const res = await fetch(`/api/cart/${userId}/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ productId, productName, productPrice, quantity: parseInt(quantity) - 1 })
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      fetchCart();
+    }
+
+    // Eliminar producto del carrito
+    async function removeFromCart(productName) {
+      const res = await fetch(`/api/cart/${userId}/remove`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ productId: productName })
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      fetchCart();
+    }
+
+    // Mostrar pantalla del carrito
+    function showCart() {
+      document.getElementById('main').classList.add('hidden');
+      document.getElementById('home').classList.add('hidden');
+      document.getElementById('products').classList.add('hidden');
+      document.getElementById('cart').classList.remove('hidden');
+      document.getElementById('orders').classList.add('hidden');
+      document.getElementById('wallet').classList.add('hidden');
+      fetchCart();
+    }
+
+    // Checkout
+    async function checkout() {
+      const res = await fetch(`/api/cart/${userId}`);
+      const cart = await res.json();
+
+      if (cart.length === 0) {
+        alert('El carrito está vacío');
+        return;
+      }
+
+      const walletRes = await fetch(`/api/wallet/${userId}`);
+      const wallet = await walletRes.json();
+
+      const total = cart.reduce((sum, item) => sum + item.quantity * item.productPrice, 0);
+
+      if (wallet.balance < total) {
+        alert('No tienes suficientes fondos en tu billetera.');
+        return;
+      }
+
+      const address = prompt('Ingrese su dirección de envío:');
+
+      const orderRes = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId, cart, address })
+      });
+
+      const data = await orderRes.json();
+      alert(data.message);
+
+      // Actualizar el saldo de la billetera
+      await fetch(`/api/wallet/${userId}/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount: -total })
+      });
+
+      fetchCart();
+      fetchOrders();
+    }
+
+    // Obtener y mostrar los pedidos
+    async function fetchOrders() {
+      const res = await fetch(`/api/orders/${userId}`);
+      const orders = await res.json();
+      const ordersList = document.querySelector('.order-items');
+      ordersList.innerHTML = '';
+      orders.forEach(order => {
+        order.cart.forEach(item => {
+          const orderItemDiv = document.createElement('div');
+          orderItemDiv.classList.add('order-item');
+          orderItemDiv.innerHTML = `
+            <img src="${item.productId === 'Tomate' ? 'tomato.jpg' : 'tv.jpg'}" alt="${item.productId}">
+            <span>${item.productId}</span>
+            <span>Cantidad: ${item.quantity}</span>
+            <span>Dirección: ${order.address}</span>
+            <span>Estado: ${order.status}</span>
+          `;
+          ordersList.appendChild(orderItemDiv);
+        });
+      });
+    }
+
+    // Mostrar pantalla de pedidos
+    function showOrders() {
+      document.getElementById('main').classList.add('hidden');
+      document.getElementById('home').classList.add('hidden');
+      document.getElementById('products').classList.add('hidden');
+      document.getElementById('cart').classList.add('hidden');
+      document.getElementById('orders').classList.remove('hidden');
+      document.getElementById('wallet').classList.add('hidden');
+      fetchOrders();
+    }
+
+    // Mostrar pantalla de billetera
+    function showWallet() {
+      document.getElementById('main').classList.add('hidden');
+      document.getElementById('home').classList.add('hidden');
+      document.getElementById('products').classList.add('hidden');
+      document.getElementById('cart').classList.add('hidden');
+      document.getElementById('orders').classList.add('hidden');
+      document.getElementById('wallet').classList.remove('hidden');
+      fetchWallet();
+    }
+
+    // Obtener y mostrar el balance de la billetera
+    async function fetchWallet() {
+      const res = await fetch(`/api/wallet/${userId}`);
+      const wallet = await res.json();
+      document.getElementById('walletBalance').textContent = wallet.balance.toFixed(2);
+    }
+
+    // Añadir fondos a la billetera
+    document.getElementById('addFundsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('addAmount').value);
+      
+      const res = await fetch(`/api/wallet/${userId}/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount })
+      });
+      
+      const data = await res.json();
+      alert(data.message);
+      fetchWallet();
+    });
+
+    // Llamar a la función para obtener el carrito y pedidos al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchCart();
+      fetchOrders();
+      fetchWallet();
+    });
+  </script>
+</body>
+</html>
